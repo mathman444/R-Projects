@@ -1,0 +1,367 @@
+---
+title: "Tinnitus Study"
+author: "Louis Christopher"
+date: "2022-10-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+
+In this study we are analyzing factors which contribute to a reduction in tinnitus, which is one of the most distressing hearing-related symptoms impacting an individual’s quality of life. Tinnitus is when you experience ringing or other noises in one or both of your ears. The noise you hear when you have tinnitus isn't caused by an external sound, and other people usually can't hear it. It affects around 15% to 20% of people, but is most common in older adults. There are various treatment options including hearing aids, medications, earwax removal, sound generators, and cognitive behavioral therapy. This study focuses on the later. Our data set was obtained from an internet based cognitive behavioral therapy intervention created in the UK to improve the access to evidence-based tinnitus treatment. The cognitive behavioral therapy is the treatment with the Tinnitus Functional Index (TFI_Score) as our primary assessment measure to quantify tinnitus distress prior (Pre_TFI_Score) and after the treatment (Post_TFI_Score). Our data set contains 142 observations (Individuals) with tinnitus and 9 predictor variables. Our predictor variables are HHI Score (Hearing Survey-Overall score, 0-40 with a higher score more severe), Generalized Anxiety Disorder (GAD) (Anxiety sum: 0-21 with a higher score more severe), Patient Health Questionnaire (PHQ) (Depression sum: 0-28 with a higher score more severe), Insomnia Severity Index (ISI) (Overall score, satisfaction with life, like Quality of Life. Higher scores better quality of life (opposite to all other scales)), Hyperacusis (0-42 higher score means more severe), Cognitive Failures (CFQ) (0-100 with a higher score meaning more severe), Age in years, and Duration of Tinnitus in years.
+
+
+## Literature Review
+
+
+Historically tinnitus has been treated mainly with cognitive behavioral therapy. According to Fuller T and colleagues, “CBT may be effective in reducing the negative impact that tinnitus can have on quality of life.” But noted that, “There is, however, an absence of evidence at 6 or 12 months follow-up.”
+
+Dr. Rodrigo and associates conducted an internet-based cognitive–behavioural therapy study for tinnitus with 228 subjects (participants) and found that 65% of the subjects had a successful ICBT outcome. Dr. Rodrigo and colleagues also noted that, "participants with a master’s degree or above had the highest odds of having a larger reduction in tinnitus severity (OR 3.47; 95% CI 1.32 to 12.51), compared with the participants who had education only up to high school or less. Additionally, the baseline tinnitus severity was found to be a significant variable (OR 2.65; 95% CI 1.50 to 4.67) contributing to a successful outcome with the intervention." They found that both linear and logistic regression models identified education level and baseline tinnitus severity to be significant predictor variables contributing to a reduction in tinnitus severity post-ICBT.
+
+
+Another study by Jun HJ, and Park MK concluded in their study that CBT “does not have an effect on improving the acoustic characteristic of tinnitus, but it improves the response to tinnitus. Thus, CBT is a good treatment option for tinnitus.” 
+
+
+Other treatments that use devices like hearing aids are also being used to treat tinnitus. A recent study by Noguchi M and colleagues found that “Treatment with hearing aids for chronic tinnitus significantly improves the symptoms in 48% of the patients, as evaluated by the TFI. Concerning the TFI subscales, our findings indicate that hearing aids are effective for improving the intrusive and sense of control subscales. Treatment outcomes may be enhanced by finding more effective treatment modalities for improving the cognitive, auditory, relaxation, and quality of life subscales and combining these modalities with hearing aids.”
+
+
+
+## Methods
+
+The main methods used in this study to analyze the factors which contribute most to a reduction in TFI Score were multiple linear regression and K-Mean regression. In both methods we partitioned our data set into a train (80% of the data) to fit our models, and a test set (the remaining 20% of the data) to test our models and generate the mean square error (MSE). To fit our multiple regression model we performed forward/backward and stepwise selection methods to select the optimal model. To fit our K-Mean regression model we used several values of k (k=2,4,6,8,10).
+
+## Analysis Findings
+
+In our initial analysis of our data we see in our summary statistics, in Figure 1, that there are 86 missing values in our Post TFI Score column while Subject ID, Group, and Gender are categorical variables. The various minimums and maximums of the data are shown along with the means and medians. We see that HHI Score varies from 0 to 40 with a mean of 17.79 and median of 18. The variable GAD varies from 0 to 21 with a mean of 7.48 and a median of 6. The variable PHQ varies from 0 to 27 with a mean of 8.03 and a median of 7. The variable ISI varies from 0 to 27 with a mean of 12.96 and a median of 13. The variable SWLS varies from 5 to 35 with a mean of 20.32 and a median of 20. The variable Hyperacusis varies from 1 to 42 with a mean of 19.04 and a median of 18.50. The variable CFQ varies from 7 to 86 with a mean of 40.59 and a median of 41. The variable Age varies from 22 years to 83 years with a mean of 55.45 years and a median of 58 years. The variable Duration of Tinnitus varies from 0.30 years to 55 years with a mean of 11.99 years and a median of 10 years. The Pre TFI Score varies from 24.40 to 97.20 with a mean of 59.37 and a median of 58.60. The Post TFI score varies from 4 to 88.40 with a mean of 35.41 and a median of 29.60.
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE}
+mydata<-read.csv("CaseStudy1.csv",header = TRUE)
+summary(mydata)
+```
+Figure 1. Summary statistics are shown above of our variables with there minimums, maximums, means, medians, 1st quarters, 3rd quarters, and any missing values (NA's).
+
+Looking at our data graphically through histograms, shown below in Figure 2, we can see their distributions. We see that HHI Score, ISI, Hyperacusis, SWLS, CFQ, and Pre TFI Scores look to be symmetrically distributed. Age is the only one that looks to have a negative distribution which makes sense given that most tinnitus sufferers are older in age. While GAD, PHQ, Duration of Tinnitus, and Post TFI Scores look to have a positive distribution.
+
+```{r, echo=FALSE}
+#Creating Histograms
+par(mfrow=c(3,2))
+hist(mydata$HHI_Score, main = "Distribution of HHI_Score",
+     xlab = "HHI_Score", freq = FALSE)
+lines(density(mydata$HHI_Score), col=1,lwd = 3)
+
+hist(mydata$GAD, main = "Distribution of GAD",
+     xlab = "GAD", freq = FALSE)
+lines(density(mydata$GAD), col=1,lwd = 3)
+
+hist(mydata$PHQ, main = "Distribution of PHQ",
+     xlab = "PHQ", freq = FALSE)
+lines(density(mydata$PHQ), col=1,lwd = 3)
+
+hist(mydata$ISI, main = "Distribution of ISI",
+     xlab = "ISI", freq = FALSE)
+lines(density(mydata$ISI), col=1,lwd = 3)
+
+hist(mydata$SWLS, main = "Distribution of SWLS",
+     xlab = "SWLS", freq = FALSE)
+lines(density(mydata$SWLS), col=1,lwd = 3)
+
+hist(mydata$Hyperacusis, main = "Distribution of Hyperacusis",
+     xlab = "Hyperacusis", freq = FALSE)
+lines(density(mydata$Hyperacusis), col=1,lwd = 3)
+
+par(mfrow=c(3,2))
+hist(mydata$CFQ, main = "Distribution of CFQ",
+     xlab = "CFQ", freq = FALSE)
+lines(density(mydata$CFQ), col=1,lwd = 3)
+
+hist(mydata$Age, main = "Distribution of Age",
+     xlab = "Age", freq = FALSE)
+lines(density(mydata$Age), col=1,lwd = 3)
+
+hist(mydata$Duration, main = "Distribution of Duration of Tinnitus",
+     xlab = "Duration of Tinnitus", freq = FALSE)
+lines(density(mydata$Duration), col=1,lwd = 3)
+
+hist(na.omit(mydata$Pre_TFI_Score), main = "Distribution of Pre TFI Score",
+     xlab = "Pre TFI Score", freq = FALSE)
+lines(density(na.omit(mydata$Pre_TFI_Score)), col=1,lwd = 3)
+
+hist(na.omit(mydata$Post_TFI_Score), main = "Distribution of Post TFI Score",
+     xlab = "Post TFI Score", freq = FALSE)
+lines(density(na.omit(mydata$Post_TFI_Score)), col=1,lwd = 3)
+```
+
+Figure 2. Shown above we see our variables distributions graphically through histograms.
+
+
+Further investigation into the 86 missing values in Post TFI Score showed that they accounted for roughly 60% of the data for Post TFI Score. In Figure 3 below we see these missing Post TFI Scores as a percentage against our other variables.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Changing Gender and Group to categorical variables.
+mydata$Gender=as.factor(mydata$Gender)
+#contrasts(mydata$Gender) #0 male is reference, 1 female.
+#is.factor(mydata$Gender)
+mydata$Group=as.factor(mydata$Group)
+#str(mydata)
+#We see that Group has 3 levels so we need to change this to 2.
+
+#table(mydata$Group) #Getting a better view of whats going on.
+#levels(mydata$Group)
+
+#Here we make the control category with a space equal to the
+#control category without a space.
+#levels(mydata$Group)[levels(TIDataRevisedAna$Low_Freq_Tinnitus)==""] <- "No"
+levels(mydata$Group)[levels(mydata$Group)=="Control "] <- "Control"
+#levels(mydata$Group) #Checking to see if they're equal.
+#Visualizing our missing values.
+library(naniar)
+library(ggplot2)
+gg_miss_var(mydata, show_pct = TRUE)
+```
+
+Figure 3. Percentage of Post TFI Scores are shown above.
+
+
+Looking deeper into our Post TFI Scores we see in Figure 4 that 100% of the control groups Post TFI Scores are missing and 25% of the Treatment groups Post TFI Scores are missing. This is perhaps do to the control group not suffering from tinnitus and therefore did not care to follow up for post treatment. The other missing values in the treatment group could perhaps be explained by patients receiving the treatment not being satisfied with the results and did not care to follow up.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+gg_miss_var(mydata,facet = Group, show_pct = TRUE)
+```
+
+Figure 4. Percentage of Control Groups missing values and percentage of Treatment Groups missing values is shown above.
+
+In order to get around the missing values in our Post TFI Column we performed data imputation using the mean of our Post TFI Column. This will inherently result is some bias. We created a new column called TFI Reduction from the difference of Post TFI Score and Pre TFI Score. We obtained a new data set and generated a correlation plot seen in Figure 5. Visually we can see that GAD, PHQ, ISI, and HHI Score are negatively correlated to TFI Reduction. Whereas SWLS is slightly positively correlated.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+#Getting the mean of the Post_TFI_Score Column.
+#mean(mydata[,14], na.rm = TRUE) #We get the mean without the NA values.
+
+#Changing the missing values to the mean of the Post_TFI_Score column.
+mydata$Post_TFI_Score[is.na(mydata$Post_TFI_Score)] <- mean(mydata[,14], na.rm = T)
+#Checking to see if the missing values are filled in.
+#mydata$Post_TFI_Score
+
+#str(mydata$Post_TFI_Score)
+#Showing values for just the Control Group.
+#mydata[mydata$Group=="Control",14]
+
+#Making sure our Post_TFI_Score column is numeric.
+mydata$Post_TFI_Score<-as.numeric(mydata$Post_TFI_Score)
+
+#Creating our new column TFI_Reduction
+mydata$TFI_Reduction <- mydata$Post_TFI_Score-mydata$Pre_TFI_Score
+#mydata$TFI_Reduction
+#names(mydata)
+
+#Won't include Subject ID, Group, Pre TFI Score or 
+#Post TFI Score in our regression analysis
+newdata = mydata[,-c(1,2,13,14)]
+#names(newdata)
+
+#Visualizing our new data with correlation analysis
+CorrelationMatrix2 <- cor(newdata[,-c(8)],use="complete.obs")
+#Rounding it to the second decimal place
+#round(CorrelationMatrix2,2)
+
+```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+
+library(corrplot)
+corrplot(CorrelationMatrix2, tl.col= "black", tl.cex=.5)
+
+
+```
+
+Figure 5. Seen above is our correlation plot. Dark blue indicates a highly positive correlation and a dark red indicates a highly negative correlation.
+
+
+When performing multiple linear regression we're trying to find a multiple linear regression model of the form $E[y|x]=B_0+B_1x+B_2x+...+B_nx+\epsilon$ where our x variables are linearly related to our response variable y. The $\epsilon$ is our error term (noise in our model) which is normally distributed with a mean of zero and a variance of $\sigma^2$. 
+
+Backward selection and forward selection resulted in a model with 6 variables having the highest adjusted $R^2$ value of 0.315. Both methods also gave us a CP value of 2.43 which was correlated to the 3 variable model and a BIC value of -25.84 which was correlated to the 3 variable model as well. Thus, the 3 variable model would be chosen since the BIC and CP value were lowest with the 3 variable model. For both backward and forward selection the 3 variable model has the form $y = -15.83 -0.81GAD(x) -0.98ISI(x) +0.50SWLS(x)$ with an adjusted $R^2$ value of 0.3065.
+
+The stepwise selection method told us that the largest $R^2$ value was with the 5 variable model with an $R^2$ value of 0.3143, but the lowest CP value was 2.43 which correlated to the 3 variable model and the lowest BIC value of -25.84 was correlated to the 3 variable model as well. Therefore, our optimal multiple linear regression model came out to be: $y = -15.83 -0.81GAD(x) -0.98ISI(x) +0.50SWLS(x)$ with a test Mean Square Error ($MSE$) of 290.59 and a test $\sqrt(MSE)$ of 17.05. A summary of our model is shown below in Figure 6.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Part 4
+#Create data partition.
+library(caret)
+set.seed(123)
+trainnewdata <- createDataPartition(newdata$TFI_Reduction, p = .8,
+                                    list = FALSE,times = 1)
+#head(trainnewdata)
+trainingData<-newdata[trainnewdata,] #training the model
+testingData<-newdata[-trainnewdata,] #Use for error metrics
+
+#Part 5
+#tidyverse for easy data manipulation and visualization
+library(tidyverse)
+#leaps, for computing best subsets regression
+library(leaps)
+
+#"leapBackward", to fit linear regression with backward selection
+#"leapForward", to fit linear regression with forward selection
+#"leapSeq", to fit linear regression with stepwise selection .
+
+# Set up repeated k-fold cross-validation (Our K here is 10)
+train.control <- trainControl(method = "cv", number = 10)
+
+##Train the model using Stepwise Subset Selection
+step.modelstepwise <- caret::train(TFI_Reduction~., data = trainingData, 
+                                   method = "leapSeq",
+                                   tuneGrid = data.frame(nvmax = 1:10),
+                                   trControl = train.control
+)
+
+##For Stepwise Regression Analysis
+Stepwisemodels <- regsubsets(TFI_Reduction ~., data = trainingData,
+                             nvmax = 10, method = "seqrep")
+
+#res.sum3 <- summary(Stepwisemodels)
+
+#res.sum3$adjr2
+##After Model with 5 variables R2 adjusted
+#does not increase significantly.
+
+
+#Gives us the predictor number model in a data frame that has
+#the highest adjusted R squared, lowest CP value, and 
+#lowest BIC value.
+#data.frame(
+  #Adj.R2 = which.max(res.sum3$adjr2),
+  #CP = which.min(res.sum3$cp),
+  #BIC = which.min(res.sum3$bic)
+#)
+#Chose model with 3 variables here.
+#Gives us the coefficients for the 3 variable model.
+#coef(step.modelstepwise$finalModel,  3)
+#Our model will include the predictors
+#GAD, ISI, and SWLS
+mymodel = lm(TFI_Reduction~GAD+ISI+SWLS,data=trainingData)
+summary(mymodel)
+
+```
+
+
+Figure 6. Summary statistics for our multiple regression model are shown above.
+
+
+The graphical interpretation of our multiple regression model $y = -15.83 -0.81GAD(x) -0.98ISI(x) +0.50SWLS(x)$ can be viewed by our added variable plots shown below in Figure 7.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Our model will include the predictors
+#GAD, ISI, and SWLS
+mymodel = lm(TFI_Reduction~GAD+ISI+SWLS,data=trainingData)
+#summary(mymodel)
+library(car)
+avPlots(mymodel)
+```
+
+
+Figure 7. The three variables that contributed the most were Generalized Anxiety Disorder (GAD), Insomnia Severity Index (ISI), and Satisfaction with Life Scales (SWLS). This says that a one unit increase in the GAD score will reduce TFI Reduction by 0.81 units. Similarly, a one unit increase in ISI will reduce TFI Reduction by 0.98 units. Whereas a one unit increase in SWLS will result in a 0.50 increase in TFI reduction (more reduction so a better lifestyle).
+
+
+Running diagnostics on our multiple regression model we generated four plots shown in Figure 8 below. The first plot is the residual plot and we don't see any irregular behavior because our residuals look to be randomly generated so there is no specific pattern which indicates the model fit is good. The second plot is our normality plot and the normality assumption is not violated. Our third plot (Scale-Location) doesn't have any irregular behavior either. The fourth plot shows us that a few points (37,57,62) are above the average Cook's distance but since we don't have much evidence to remove the data points we won't.
+
+
+```{r, echo=FALSE}
+##Part 6
+#Model Diagnostics
+###Diagnostic Plots and Their Interpretations. 
+par(mfrow = c(2, 2))
+plot(mymodel)
+
+```
+
+
+Figure 8. We see our model diagnostic plots for our multiple linear regression model shown above.
+
+
+```{r, echo=FALSE}
+##Part 8
+###Confidence and Prediction Interval 
+#predict(mymodel,testingData, interval="confidence")
+
+##Prediction Interval (includes uncertainty)
+#predict(mymodel,testingData[1:10], interval="predict")
+yhat= predict(mymodel,testingData[1:10], interval="predict")[,1]
+y=testingData$TFI_Reduction
+
+MSE = mean((y-yhat)^2)
+#MSE #290.5852
+#sqrt(MSE) #17.04656
+
+```
+
+
+After performing KNN Regression on our data set with values of k = 2, 4, 6, 8, 10 we found that the optimal model was when k = 10 variables shown in Figure 9 below. This model generated a test $MSE$ of 257.77 and a test $\sqrt(MSE)$ of 16.06. This was not only the best KNN Regression model but also out performed our multiple linear regression model since its test $MSE$ and $\sqrt(MSE)$ are lower. Thus, a KNN Regression model with 10 variables is the best model for predicting a reduction in TFI Scores.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Part 9
+##K-mean Regression
+set.seed(123)
+my_knn_model <- train(trainingData[1:10], trainingData[,11], method = "knn",
+                      preProcess=c("center", "scale"),
+                      tuneGrid = expand.grid(k = c(2, 4, 6, 8, 10)))
+
+my_knn_model
+#my_knn_model$bestTune #k = 10 is the best model
+
+# Predict the labels of the test set
+predictions<-predict(object=my_knn_model,testingData[,1:10])
+
+# Evaluate the predictions
+#install.packages("Metrics")
+library(Metrics) 
+# Calculating RMSE using rmse()          
+result = rmse(testingData[,11],predictions) 
+#result #16.05517
+#*MSE=(Sum_1^n{(y_i-hat(y_i))^2})/n
+mse_test <-mean((testingData[,11] - predictions)^2)
+#mse_test #257.7685
+
+#*MAE=(Sum_1^n{|y_i-hat(y_i)|})/n
+#mae_test <- caret::MAE(trainingData[,11], predictions)
+#mae_test #17.65808
+
+##*RMSE=sqrt(MSE)
+#rmse_test<- caret::RMSE(testingData[,11], predictions)
+#rmse_test #16.05517
+
+#cat("Test MSE: ", mse_test, "Test MAE: ", mae_test, "Test RMSE: ", rmse_test)
+
+```
+
+
+Figure 9. Above we see the summary statistics for our KNN Regression models for different values of k = 2,4,6,8,10.
+
+
+
+## Discussion
+
+After our analysis of the tinnitus data we saw that the KNN regression with 10 variables is the model with the lowest test mean squared error. Even though this model has the highest prediction accuracy, it does have its drawbacks. Due to the nature of the KNN regression algorithm we cannot see which variables contribute the most to a reduction in TFI. For this reason, we cannot graph the KNN model either. This is where the multiple linear regression model has an edge. We can easily interpret this model by knowing which factors (GAD,ISI,SWLS) contributed the most, as we saw in our analysis findings. Some limitations in our models would be the missing values we initially saw, and the bias resulting from the mean imputation. If these values had not been missing, and we had more observations, we would have been able to create a more robust multiple regression model. This would have likely resulted in a lower test mean square error and a lower test mean squared error than the KNN model.
+
+## References
+
+Fuller T, Cima R, Langguth B, Mazurek B, Vlaeyen JW, Hoare DJ. Cognitive behavioural therapy for tinnitus. Cochrane Database Syst Rev. 2020 Jan 8;1(1):CD012614. doi: 10.1002/14651858.CD012614.pub2. PMID: 31912887; PMCID: PMC6956618. <https://pubmed.ncbi.nlm.nih.gov/31912887/#:~:text=based%20discussion%20forums).-,CBT%20may%20reduce%20the%20impact%20of%20tinnitus%20on%20quality%20of,(MCID%20%3D%207%20points).>
+
+
+Rodrigo H, Beukes EW, Andersson G, et alInternet-based cognitive–behavioural therapy for tinnitus: secondary analysis to examine predictors of outcomesBMJ Open 2021;11:e049384. doi: 10.1136/bmjopen-2021-049384 <https://bmjopen.bmj.com/content/11/8/e049384>
+
+
+Jun HJ, Park MK. Cognitive behavioral therapy for tinnitus: evidence and efficacy. Korean J Audiol. 2013 Dec;17(3):101-4. doi: 10.7874/kja.2013.17.3.101. Epub 2013 Dec 13. PMID: 24653916; PMCID: PMC3936550. <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3936550/>
+
+
+Noguchi M, Suzuki N, Oishi N, Ogawa K. Effectiveness of Hearing Aid Treatment in Patients with Chronic Tinnitus: Subscale Evaluations Using the Tinnitus Functional Index and Factor Analysis. J Int Adv Otol. 2021 Jan;17(1):42-45. doi: 10.5152/iao.2020.9161. PMID: 33605220; PMCID: PMC7901423. <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7901423/#:~:text=Recently%2C%20Meikle%20et%20al.,gold%20standard%20for%20tinnitus%20assessment.>

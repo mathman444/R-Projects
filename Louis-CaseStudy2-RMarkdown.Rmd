@@ -1,0 +1,241 @@
+---
+title: "Predictive Modeling for Direct Mail Marketing"
+author: "Louis Christopher"
+date: "2022-11-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Direct mail marketing campaigns are used to get a customer to 'buy' or 'subscribe' to a certain product or service. Therefore, it's important for the company doing the campaign to know whether the campaign is worth undertaking. This is where creating a predictive model is useful. The data used to conduct this study contains information on customer responses to a historical direct mail marketing campaign. Our goal is to improve the performance of future waves of this campaign by targeting people who are likely to take the offer. We will build a "look-alike" model to predict the probability that a given client will accept the offer and then use that model to select the target audience. We want a model that is accurate so that we can find the best possible target audience. The data set has 68 predictive variables and 20k records. Most variables contain credit information, such as the number of accounts, active account types, credit limits, and utilization. The data set also captures the age and location of the individuals. For modeling and validation purposes, we split the data into two parts, 10,000 records for training and 10,000 records for testing. The model's success will be based on its ability to predict the probability that the customer will take the offer (captured by the PURCHASE indicator), for the validation data set.
+
+## Literature Review
+
+Various studies have been conducted on modeling direct mail marketing. Cui, D., & Curry, D. (2005) researched how the support vector machine (SVM) performs in a marketing environment for prediction. They measured the performance "through a combination of analytic discourse and direct empirical comparisons with the multinomial logit model (MNL)". Cui, D., & Curry, D. mention that, "in marketing, the logit is the gold standard; it is widely applied and is known to perform well. It provides a well-understood benchmark for the SVM". They found the SVM predicted 29.9% better on average than the logit. The researchers mention that the "results suggest that the SVM has considerable promise for accurately predicting consumer choice in the"pure prediction" environments found in automated modeling, mass-produced models, intelligent agents, and data mining".
+
+In their main experiment, they found that a "single SVM significantly out predicts the best model from a set of appropriate multinomial logit (MNL) models even though perfect a priori knowledge is used to correctly select the nesting structure in cases with correlated error". They go on to say that "in areas where automated modeling is useful, the"one size fits all" aspect of the SVM is a definite advantage". Cui, D., & Curry, D. then concluded by saying:
+
+> The support vector machine performs well on predictive tasks where the relationship between predictors and target is complex. Although its modeling philosophy is nonstandard, the SVM and related kernel methods may provide not only accurate "pure prediction," but a unique link between structural diagnostics and predictive accuracy in a wide variety of marketing applications.
+
+Ayetiran, E.F., & Adeyemo, A.B. (2012) wanted to identify customers who were more likely to respond to new product offers from direct marketing. They used historical purchase data and developed a predictive model to predict a probability that a customer in Ebedi Microfinance bank would respond to a promotion or an offer. They used the Naïve Bayes algorithm to construct the classifier system. Ayetiran, E.F., and Adeyemo, A.B. found that "of the prediction results obtained, which classifies 55.25% of the customers as respondents and 44.75% as non-respondents, we can conclude that Ebedi Microfinance bank can plan effective marketing of its products/services through the guiding report obtained on each of the customers".
+
+AKDENİZ DURAN, E., PAMUKCU, A., & BOZKURT, H. (2014) wanted to see which data mining techniques were the most effecting in direct mailing campaigns. They applied artificial neural networks, decision trees and logistic regression data mining methods in the banking sector and compared the predictive power of these methods. Akdeniz Duran, E., and colleagues found that:
+
+> The logistic regression model has 90.2% and 90.5% classification accuracy for train data set and validation data set respectively. The decision tree model has the classification accuracy of 90.5% both for train and validation data sets. And finally, artificial neural network model has 90.8% classification accuracy both for train and validation data sets.
+
+Ultimately, because the artificial neural network model had slightly better classification accuracy than logistic regression and decision tree analysis, they recommend that the banks use the artificial neural networks model.
+
+Levin, N., & Zahavi, J. (1998) used results from a spring 1996 mailing campaign for a home equity loan, to evaluate the performance of several continuous predictive models. The models were compared based on profitability measures, goodness-of-fit criteria, and prediction accuracy. They found linear regression models were the least favorable in modeling continuous choice and said, "this may be attributed to the fact that the number of positive responders is largely outnumbered by the number of nonresponders in the sample, making it tough for the noncensored and unbounded linear model to accurately predict the profit/return per customer". Levin, N., & Zahavi, J. mention that "this gives a clear advantage in modeling continuous choice to models that explicitly account for censored data---Tobit or twostage, especially in database marketing applications where the number of orders is relatively low as compared with the number of nonbuyers". They saw that logistic regression models performed almost as well as the better continuous choice models in selecting people for promotion, "but they lack in terms of predicting profits and returns".
+
+They noted that their ordinal regression model could be used to approximate prediction of profit/return per customer, "But the resulting predictions are at best crude, unless the continuous choice value is partitioned into many ordinal choice values which, in turn, may render the model infeasible (e.g., not enough buyers are left in each ordinal category to allow estimating a constant term for them)". Levin, N., & Zahavi, J concluded that the Tobit and two-stage models as most suitable to address continuous choice problems and that the "two-stage model combines the best of both worlds---the discrete choice models and the continuous choice models, thus making it a leading candidate in modeling continuous response".
+
+## Methods
+
+For this study we used Random Forests (denoted RF) which is based on decision trees, and the Support Vector Machine (denoted SVM). These methods are used when trying to predict a categorical response such as 'yes' or 'no'.
+
+Random Forests are an extension of single classification trees where multiple decision trees are built with random subsets of the data. All of the random subsets have the same number of data points, and are selected from the complete data set. Used data is placed back in the full data set and can be selected in subsequent trees. In Random Forests, the random subsets are selected in a procedure called 'bagging', in which each data point has an equal probability of being selected for each new random subset. About two thirds of the total data set is included in each random subset. The other third of the data is not used to build the trees, and this part is called the 'out-of-the-bag' data. This part is later used to evaluate the model. No formal distributional assumptions are made with random forests, they're non-parametric and can therefore handle skewed and multi-modal data. (Richmond, S. (2016))
+
+The SVM classifier works by finding the optimal hyper-plane that best separates the two classes by finding the maximum margin between the support vectors and hyper-plane. The Support Vector Machine assumes that the data is independent and identically distributed.
+
+## Results
+
+We know that our training data set and validation data set each contain 69 predictors and 10,000 observations. We want to reduce the number of predictor variables used in our model. Thus, we began our analysis by removing all variables with an information value (IV) less than 0.05. After performing this we created new training and validation data sets with a reduced number of predictor variables. After this was done, we eliminated highly correlated variables using variable clustering. We generated 20 clusters and picked the variables with the highest IV within each cluster.
+
+A summary of the 20 most informative variables in our training data set are shown below in Figure (1). As we can see, minimum and maximum values are shown along with the 1st quadrant, median, mean, and 3rd quadrant of each predictor. If there are any missing values (there aren't) they would be denoted by an NA value beneath the max value. For instance we see the second predictor TOT_HI_CRDT_CRDT_LMT has a minimum value of 0 and a maximum value of 5,075,437 along with a mean of 89,292 and a median of 22,932.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#setwd("C:/Users/lc4mo/OneDrive/Documents/Math 6333 Stat Learning")
+#load("Math_6333_Case_Study_2_Louis_Christopher.RData")
+#1
+train<-read.csv("C:/Users/lc4mo/OneDrive/Documents/Math 6333 Stat Learning/InsuranceData_train.csv",header = TRUE) 
+valid <- read.csv("C:/Users/lc4mo/OneDrive/Documents/Math 6333 Stat Learning/InsuranceData_valid.csv",header = TRUE)
+
+library(Information)
+IV <- create_infotables(data=train, y="PURCHASE", ncore=2)
+#View(IV$Summary)
+train_new <- train[,c(subset(IV$Summary, IV>0.05)$Variable, "PURCHASE")]
+#dim(train_new) #10,000 x 34
+valid_new <- valid[,c(subset(IV$Summary, IV>0.05)$Variable, "PURCHASE")]
+#dim(valid_new) #10,000 x 34
+
+
+#3
+######## Variable clustering 
+#install.packages("ClustOfVar")
+#install.packages("reshape2")
+#install.packages("plyr")
+library(ClustOfVar)
+library(reshape2)
+library(plyr)
+tree <- hclustvar(train_new [,!(names(train_new)=="PURCHASE")])
+nvars <- 20
+part_init<-cutreevar(tree,nvars)$cluster
+kmeans<-
+  kmeansvar(X.quanti=train_new[,!(names(train_new)=="PURCHASE")],init=part_init)
+clusters <- cbind.data.frame(melt(kmeans$cluster), row.names(melt(kmeans$cluster)))
+names(clusters) <- c("Cluster", "Variable")
+clusters <- join(clusters, IV$Summary, by="Variable", type="left")
+clusters <- clusters[order(clusters$Cluster),]
+clusters$Rank <- ave(-clusters$IV, clusters$Cluster, FUN=rank)
+#View(clusters)
+variables <- as.character(subset(clusters, Rank==1)$Variable)
+#This will give you the final 20 variables that you will use for classification purposes.
+
+
+#4
+#Create categorical variable NEWPurchase (our response) for train data
+NEWPurchase = as.factor(ifelse(train_new$PURCHASE==1,"1","-1"))
+train_new = data.frame(train_new, NEWPurchase)
+#Remove PURCHASE from data set
+train_new = train_new[,-34]
+summary(train_new[,variables]) #Include in R markdown
+
+```
+
+Figure (1): Our new training data set's summary statistics.
+
+Viewing our new validation set in the same way we see it's summary statistics below in Figure (2) and note that there are no missing values as well.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#Create categorical variable NEWPurchase (our response) for valid data
+NEWPurchase = as.factor(ifelse(valid_new$PURCHASE==1,"1","-1"))
+valid_new = data.frame(valid_new, NEWPurchase)
+#Remove PURCHASE from data set
+valid_new = valid_new[,-34]
+summary(valid_new[,variables]) #Include in R Markdown
+```
+
+Figure (2): Our new validation data set's summary statistics.
+
+After creating our new training and validation data sets we would like to know if there is any correlation between the 20 variables in each data set. A correlation plot is shown below in Figure (3) for our training data set. We see that the predictors N_OF_SATISFY_FNC_REV_ACTS, N_BC_ACT_OPN_IN_24M, and TOT_HI_CRDT_CRDT_LMT are positively correlated with N_OPEN_REV_ACTS. Whereas the predictor D_NA_M\_SNC_MST_RCNT_ACT_OPN is negatively correlated with N_OPEN_REV_ACTS.
+
+```{r, message=FALSE, warning=FALSE, , echo=FALSE}
+#Visualizing our new train data with correlation analysis
+CorrelationMatrix_train <- cor(train_new[,variables],
+                               use="complete.obs")
+#Rounding it to the second decimal place
+#round(CorrelationMatrix_train,2)
+library(corrplot)
+corrplot(CorrelationMatrix_train, tl.col= "black", tl.cex=.5)
+
+```
+
+Figure (3): Correlation plot of our training data set. Cool colored values (green, blue and black (black is the most positively correlated)) in the plot indicate a positive correlation and warm colored values (yellow, orange and red (red is the most negatively correlated)) indicate a negative correlation.
+
+Similarly, a correlation plot for our validation data set was created, shown in Figure (4). As we can see, our training set correlation plot and validation set correlation plot look identical. There are only a few strongly correlated predictors similar to our previous correlation plot.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#Visualizing our new valid data with correlation analysis
+CorrelationMatrix_valid <- cor(valid_new[,variables],
+                               use="complete.obs")
+#Rounding it to the second decimal place
+#round(CorrelationMatrix_valid,2)
+library(corrplot)
+corrplot(CorrelationMatrix_valid, tl.col= "black", tl.cex=.5)
+
+```
+
+Figure (4): Correlation plot of our validation data set. Cool colored values (green, blue and black (black is the most positively correlated)) in the plot indicate a positive correlation and warm colored values (yellow, orange and red (red is the most negatively correlated)) indicate a negative correlation.
+
+After exploring our data sets and seeing no irregularities, we created Random Forest model's using mtry values ranging from 1 to 13 and an ntree value of 10,001 for each tree. We selected the optimal RF model by choosing the model with the lowest Out-of-Bag error (OOB) which was the model having a mtry value of 4.
+
+Making predictions with our RF model using the validation data, we saw that out of 10,000 customers 8,139 are predicted to not purchase the offer, and 1,861 are predicted to purchase the offer. In Figure (5) below the confusion matrix shows that the model accurately predicted 7,977 as did not purchase (value of -1) and mis-classified 162 as purchase (value of 1), it also mis-classified zero of them as did not purchase (-1) and correctly classified 1,861 as purchase (1). Also seen below, the balanced accuracy for this model is 96.00%, the sensitivity is 91.99%, the specificity is 100%, and the F1 score is 95.83%. The balanced accuracy is defined to be the mean of sensitivity and specificity, and the F1 score is the harmonic mean of sensitivity and recall (the number of true positive results divided by the number of all samples that should have been identified as positive). Both balanced accuracy and the F1 score are used to compare models when dealing with imbalanced data, i.e. when one of the target classes appears a lot more than the other. For all of the measures mentioned, the higher the percentages the better the model performance.
+
+![](RF_confusion%20matrix.png)
+
+Figure (5): Displayed in the above table for our RF model is its Sensitivity (the proportion of customers that were predicted to take the offer out of those who actually took the offer), Specificity (the proportion of customers that were predicted not to take the offer out of those who actually did not take the offer), and various other measures including the confusion matrix.
+
+We would like to know which predictors have the most impact or highest importance in our RF model. Generated below in Figure (6) is a variable importance plot which shows the predictors with their mean decrease in Gini score (higher the score, the more important the predictor). The five most important variables to our model are TOT_HI_CRDT_CRDT_LMT, M_SNC_OLDST_RETAIL_ACT_OPN, RATIO_BAL_TO_HI_CRDT, N_OPEN_REV_ACTS, and M_SNC_MST_RCNT_ACT_OPN.
+
+![](RF%20importance%20plot.png) Figure (6): Variable importance plot shows which variables are most important with the variables having the highest mean decrease in Gini as the most important.
+
+Below in Figure (7) we display the ROC curve for our random forest model and its area under the curve (AUC) value of 0.96. The area under the curve is the measure of the ability of a classifier to distinguish between classes and is used as a summary of the ROC curve. The higher the AUC value, the better the performance of the model at distinguishing between the positive and negative classes.
+
+![](RF%20roc%20curve.png) Figure (7): ROC curve and AUC value is displayed for our RF model.
+
+After creating our RF model we created two support vector machine (SVM) models. For our first SVM model we used a polynomial kernel with degree 3 and a cost value of 0.01. In Figure (8) below we see predictions, a confusion matrix, and summary statistics for the confusion matrix. Making predictions with our SVM model using the validation data we saw that out of 10,000 customers 9,842 are predicted to not purchase the offer, and 158 are predicted to purchase the offer. The confusion matrix shows that the model accurately predicted 7,937 as did not purchase (value of -1) and mis-classified 1,907 as purchase (value of 1), it also mis-classified 40 as did not purchase (-1) and correctly classified 118 as purchase (1). In Figure (8) below we see the balanced accuracy is 52.67%, sensitivity is 5.83%, specificity is 99.50%, and its F1 score is 10.82%.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#6
+# Support Vector Machine
+library(e1071)
+#First model
+set.seed(123)
+svm.model<-svm(NEWPurchase~.,data=train_new[,c("NEWPurchase",variables)], cost=0.01,kernel="polynomial",degree=3,probability=TRUE)
+#Predictions
+yhat_svm1 = predict(svm.model,newdata=valid_new,probability = TRUE)
+table(yhat_svm1)
+
+xtab_svm1 = table(yhat_svm1, valid_new$NEWPurchase)
+library("e1071")
+caret::confusionMatrix(xtab_svm1,mode = "everything", positive = "1")
+
+```
+
+Figure(8): Above we predicting how many customers out of 10,000 will purchase the offer or not purchase the offer using our polynomial kernel SVM model. Displayed in the above table is Sensitivity (the proportion of customers that were predicted to take the offer out of those who actually took the offer), Specificity (the proportion of customers that were predicted not to take the offer out of those who actually did not take the offer), and various other measures including the confusion matrix.
+
+Below in Figure (9) we generated an ROC curve for our polynomial kernel SVM model along with its AUC value of 0.527 displayed.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+###ROC Curve with "pROC" library 
+library(pROC)
+plot(roc(valid_new$NEWPurchase, as.numeric(data.frame(yhat_svm1)[,1])),
+     print.auc=TRUE,col="blue",lwd=3,main="SVM (Polynomial Kernel) ROC Curve for Insurance Test Data")
+
+```
+
+Figure (9): ROC curve and AUC value is displayed for our polynomial kernel SVM model.
+
+For our second SVM model we used a Gaussian radial kernel with a gamma value of 0.000001 and a cost value of 0.01. In figure (10) below we see predictions, a confusion matrix, and summary statistics for the confusion matrix. Making predictions with this SVM model using the validation data, we saw that out of 10,000 customers 9,985 are predicted to not purchase the offer, and 15 are predicted to purchase the offer. The confusion matrix shows that the model accurately predicted 7,974 as did not purchase (value of -1) and mis-classified 2,011 as purchase (value of 1), it also mis-classified 3 as did not purchase (-1) and correctly classified 12 as purchase (1). In Figure (10) below we see the balanced accuracy is 50.28%, sensitivity is 0.59%, specificity is 99.96%, and its F1 score is 1.18%.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+###### Second model
+set.seed(123)
+svm.model2<-svm(NEWPurchase~.,data=train_new[,c("NEWPurchase",variables)],cost=0.01,kernel="radial",gamma=0.000001,degree=3,probability=TRUE)
+#summary(svm.model2)
+#Predictions
+yhat_svm2 = predict(svm.model2,newdata=valid_new,probability = TRUE)
+
+table(yhat_svm2)
+xtab_svm2 = table(yhat_svm2, valid_new$NEWPurchase)
+library("e1071")
+caret::confusionMatrix(xtab_svm2,mode = "everything", positive = "1")
+```
+
+Figure(10): Above we predicting how many customers out of 10,000 will purchase the offer or not purchase the offer using our radial kernel SVM model. Displayed in the above table is Sensitivity (the proportion of customers that were predicted to take the offer out of those who actually took the offer), Specificity (the proportion of customers that were predicted not to take the offer out of those who actually did not take the offer), and various other measures including the confusion matrix.
+
+Below in Figure (11) we generated an ROC curve for our second (radial kernel) SVM model along with its AUC value of 0.503 displayed.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+###ROC Curve with "pROC" library 
+library(pROC)
+plot(roc(valid_new$NEWPurchase, as.numeric(data.frame(yhat_svm2)[,1])),
+     print.auc=TRUE,col="blue",lwd=3,main="SVM (Radial Kernel) ROC Curve for Insurance Test Data")
+
+```
+
+Figure (11): ROC curve and AUC value is displayed for our radial kernel SVM model.
+
+## Discussion
+
+From the above models created, the RF model has the highest balanced accuracy at 96.00%, followed by the polynomial SVM model at 52.67%, and then the radial SVM model at 50.28%. The RF model also had the highest AUC value (0.960), followed by the polynomial SVM model (0.527), and then the radial SVM model (0.503). The model with the highest sensitivity was once again the RF model (91.99%), followed by the polynomial SVM model (5.83%) and then radial SVM model (0.59%). Regarding specificity, the RF model was the highest at 100%, followed by the radial SVM model at 99.96% and then the polynomial SVM model at 99.49%. The RF model had the highest F1 score as well at 95.83%, with the polynomial SVM model at 10.82%, and the radial SVM model at 1.18%. The higher these values, the better the model performance is.
+
+Since the random forest model performed the best regarding balanced accuracy and the F1 score, the random forest model is considered the best model out of the three models created. The next best model would be the polynomial SVM model since its balanced accuracy and F1 score are higher than the radial SVM model. From these results, we can conclude that the random forest model is one of the best choices one can choose when predicting a categorical response such as whether a customer will decide to purchase an offer or not. This is important as direct marketing campaigns and the like cost large sums of money. Having the most accurate model is crucial in making sure the campaign is worth undertaking or not.
+
+A couple limitations of the study were computing power and time. If computing power and time weren't an issue we could have let cost and gamma values vary through a range to select an optimal SVM model. Or we could have tried different kernels and degree's for our polynomial SVM model. There are a lot of combinations one could try in order to come up with the 'best' model. If time weren't an issue we could have also tried other classification methods such as logistic regression, linear discriminant analysis, Naive Bayes, and more.
+
+## References
+
+Cui, D., & Curry, D. (2005). Prediction in Marketing Using the Support Vector Machine. Marketing Science, 24(4), 595--615. <https://doi.org/10.1287/mksc.1050.0123>
+
+Ayetiran, E. F., & Adeyemo, A. B. (2012). A data mining-based response model for target selection in direct marketing. IJ Information Technology and Computer Science, 1(1), 9-18. <https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=0ff6701f0e1a3c9d771726f07deb54b8c0be12a8>
+
+AKDENİZ DURAN, E., PAMUKCU, A., & BOZKURT, H. (2014). Comparison of Data Mining Techniques for Direct Marketing Campaings. Sigma: Journal of Engineering & Natural Sciences / Mühendislik ve Fen Bilimleri Dergisi, 32(2), 142--152. <https://web.s.ebscohost.com/ehost/pdfviewer/pdfviewer?vid=12&sid=af43fdc5-59e2-4462-b09d-4448daf6c8dd%40redis>
+
+Levin, N., & Zahavi, J. (1998). Continuous predictive modeling---a comparative analysis. Journal of Interactive Marketing, 12(2), 5--22. [https://doi.org/10.1002/(SICI)1520-6653(199821)12:2\<5::AID-DIR2](https://doi.org/10.1002/(SICI)1520-6653(199821)12:2%3C5::AID-DIR2){.uri}[3.0.CO;2-D](https://doi.org/10.1002/(SICI)1520-6653(199821)12:2%3C5::AID-DIR23.0.CO;2-D)
+
+Richmond, S. (2016, March 21). Algorithms exposed: Random Forest. BCCVL. Retrieved November 20, 2022, from <https://bccvl.org.au/algorithms-exposed-random-forest/>
